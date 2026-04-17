@@ -1,0 +1,172 @@
+@model List<AppUser>
+
+@{
+    var userManager = ViewContext.HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.Identity.UserManager<AppUser>)) as Microsoft.AspNetCore.Identity.UserManager<AppUser>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Quản Lý Tài Khoản Người Dùng</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="bi bi-person-plus"></i> Tạo Tài Khoản Mới
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Email</th>
+                <th>Họ Và Tên</th>
+                <th>Vai Trò</th>
+                <th>Địa Chỉ</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>@user.FullName</td>
+                    <td>
+                        @{
+                            var userRoles = userManager?.GetRolesAsync(user).Result;
+                            var roleText = userRoles?.FirstOrDefault() ?? "Không có vai trò";
+                            var roleBadgeClass = roleText switch 
+                            {
+                                "Admin" => "danger",
+                                "Staff" => "warning",
+                                "Customer" => "info",
+                                _ => "secondary"
+                            };
+                        }
+                        <span class="badge bg-@roleBadgeClass">@roleText</span>
+                    </td>
+                    <td>@user.Address</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editRoleModal" 
+                                data-user-id="@user.Id" data-user-email="@user.Email">
+                            <i class="bi bi-pencil"></i> Cập Nhật
+                        </button>
+                        <form method="post" action="@Url.Action("Delete")" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@user.Id">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa tài khoản này?')">
+                                <i class="bi bi-trash"></i> Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">
+        <i class="bi bi-inbox"></i> Không có người dùng nào
+    </div>
+}
+
+<!-- Modal: Create User -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo Tài Khoản Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("Create")">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="Email" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Họ Và Tên *</label>
+                        <input type="text" name="FullName" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Địa Chỉ</label>
+                        <input type="text" name="Address" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số CCCD</label>
+                        <input type="text" name="CccdNumber" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mật Khẩu *</label>
+                        <input type="password" name="Password" class="form-control" required minlength="6">
+                        <small class="text-muted">Tối thiểu 6 ký tự</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Vai Trò *</label>
+                        <select name="role" class="form-select" required>
+                            <option value="">-- Chọn Vai Trò --</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Customer">Customer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Tạo Tài Khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Role -->
+<div class="modal fade" id="editRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cập Nhật Vai Trò</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("AssignRole")">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    
+                    <input type="hidden" id="userId" name="userId">
+                    <p id="userEmail"></p>
+
+                    <div class="mb-3">
+                        <label class="form-label">Vai Trò Mới *</label>
+                        <select name="role" class="form-select" required>
+                            <option value="">-- Chọn Vai Trò --</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Customer">Customer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Cập Nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('editRoleModal').addEventListener('show.bs.modal', function(event) {
+    var button = event.relatedTarget;
+    var userId = button.getAttribute('data-user-id');
+    var userEmail = button.getAttribute('data-user-email');
+    
+    document.getElementById('userId').value = userId;
+    document.getElementById('userEmail').textContent = 'Email: ' + userEmail;
+});
+</script>

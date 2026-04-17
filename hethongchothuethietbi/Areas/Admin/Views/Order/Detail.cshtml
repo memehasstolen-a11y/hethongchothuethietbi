@@ -1,0 +1,177 @@
+@model RentalOrder
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h3>Thông tin đơn hàng</h3>
+        <dl class="row">
+            <dt class="col-sm-4">Mã đơn:</dt>
+            <dd class="col-sm-8">#@Model.Id</dd>
+
+            <dt class="col-sm-4">Khách hàng:</dt>
+            <dd class="col-sm-8">@Model.Customer.FullName</dd>
+
+            <dt class="col-sm-4">Địa chỉ:</dt>
+            <dd class="col-sm-8">@Model.Customer.Address</dd>
+
+            <dt class="col-sm-4">CCCD:</dt>
+            <dd class="col-sm-8">@Model.Customer.CccdNumber</dd>
+
+            <dt class="col-sm-4">Trạng thái:</dt>
+            <dd class="col-sm-8">
+                @{
+                    var badgeColor = Model.OrderStatus switch
+                    {
+                        RentalOrderStatus.PendingPayment => "warning",
+                        RentalOrderStatus.Deposited => "info",
+                        RentalOrderStatus.Rented => "primary",
+                        RentalOrderStatus.Completed => "success",
+                        RentalOrderStatus.Cancelled => "danger",
+                        _ => "secondary"
+                    };
+                }
+                <span class="badge bg-@badgeColor">@Model.OrderStatus.ToString()</span>
+            </dd>
+        </dl>
+    </div>
+
+    <div class="col-md-6">
+        <h3>Thông tin tài chính</h3>
+        <dl class="row">
+            <dt class="col-sm-4">Tổng tiền:</dt>
+            <dd class="col-sm-8">@Model.TotalAmount.ToString("N0") VNĐ</dd>
+
+            <dt class="col-sm-4">Tiền cọc (30%):</dt>
+            <dd class="col-sm-8">@Model.DepositAmount.ToString("N0") VNĐ</dd>
+
+            <dt class="col-sm-4">Phí phạt:</dt>
+            <dd class="col-sm-8">@Model.PenaltyAmount.ToString("N0") VNĐ</dd>
+
+            <dt class="col-sm-4">Ngày tạo:</dt>
+            <dd class="col-sm-8">@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h4>Chi tiết thiết bị thuê</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Tên thiết bị</th>
+                    <th>Số lượng</th>
+                    <th>Giá/ngày</th>
+                    <th>Số ngày</th>
+                    <th>Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var detail in Model.Details)
+                {
+                    <tr>
+                        <td>@detail.Equipment.Name</td>
+                        <td>1</td>
+                        <td>@detail.UnitPriceAtBooking.ToString("N0") VNĐ</td>
+                        <td>@Math.Ceiling((Model.ExpectedReturnTime - Model.ExpectedPickUpTime).TotalDays)</td>
+                        <td>@((detail.UnitPriceAtBooking * (decimal)Math.Ceiling((Model.ExpectedReturnTime - Model.ExpectedPickUpTime).TotalDays)).ToString("N0")) VNĐ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.Comments.Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>Hình ảnh & Ghi chú</h4>
+            @foreach (var comment in Model.Comments)
+                {
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p class="card-text"><strong>@comment.Author?.FullName:</strong> @comment.Content</p>
+                            <small class="text-muted">@comment.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small>
+                            @if (!string.IsNullOrEmpty(comment.ImageUrl))
+                            {
+                                <br />
+                                <img src="@comment.ImageUrl" class="img-thumbnail mt-2" style="max-width: 300px;" />
+                            }
+                        </div>
+                    </div>
+                }
+        </div>
+    </div>
+}
+
+@if (Model.OrderStatus == RentalOrderStatus.PendingPayment)
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>Gửi Mã QR Thanh Toán</h4>
+            <form method="post" action="@Url.Action("UploadQRCode")" enctype="multipart/form-data" class="card p-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="mb-3">
+                    <label class="form-label">📱 Chọn hình ảnh mã QR:</label>
+                    <input type="file" name="qrImage" class="form-control" accept="image/*" required>
+                    <small class="form-text text-muted">JPG, PNG (tối đa 5MB)</small>
+                </div>
+                <button type="submit" class="btn btn-info btn-sm">
+                    <i class="bi bi-upload"></i> Gửi Mã QR
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="row">
+    <div class="col-12">
+        <h4>Hành động</h4>
+
+        @if (Model.OrderStatus == RentalOrderStatus.PendingPayment)
+        {
+            <form method="post" action="@Url.Action("ConfirmPayment", new { id = Model.Id })" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Xác Nhận Thanh Toán
+                </button>
+            </form>
+
+            <form method="post" action="@Url.Action("RejectOrder", new { id = Model.Id })" style="display:inline;" onsubmit="return confirm('Xác nhận từ chối đơn hàng?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-x-circle"></i> Từ Chối
+                </button>
+            </form>
+        }
+
+        @if (Model.OrderStatus == RentalOrderStatus.Deposited)
+        {
+            <a href="@Url.Action("Handover", new { id = Model.Id })" class="btn btn-primary">
+                <i class="bi bi-box-seam"></i> Bàn giao thiết bị
+            </a>
+        }
+
+        @if (Model.OrderStatus == RentalOrderStatus.Rented)
+        {
+            <a href="@Url.Action("CheckIn", new { id = Model.Id })" class="btn btn-warning">
+                <i class="bi bi-arrow-return-left"></i> Nhận lại thiết bị
+            </a>
+        }
+
+        @if (Model.OrderStatus == RentalOrderStatus.Completed)
+        {
+            <form method="post" action="@Url.Action("DeleteOrder", new { id = Model.Id })" style="display:inline;" onsubmit="return confirm('Xóa đơn hàng này? Hành động không thể hoàn tác!');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Xóa Đơn
+                </button>
+            </form>
+        }
+
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>

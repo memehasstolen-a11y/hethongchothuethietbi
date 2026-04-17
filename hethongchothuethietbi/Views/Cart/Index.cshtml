@@ -1,0 +1,89 @@
+@model List<CartViewModel>
+
+@{
+    ViewData["Title"] = "Giỏ Hàng";
+}
+
+<h3 class="mb-4">
+    <i class="bi bi-bag"></i> Giỏ Hàng Của Tôi
+</h3>
+
+@if (Model.Any())
+{
+    <div class="table-responsive mb-4">
+        <table class="table">
+            <thead class="table-light">
+                <tr>
+                    <th>Thiết Bị</th>
+                    <th>Giá/Ngày</th>
+                    <th class="text-center">Số Lượng</th>
+                    <th>Tổng</th>
+                    <th class="text-center">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.EquipmentName</td>
+                        <td>@item.PricePerDay.ToString("N0") VNĐ</td>
+                        <td class="text-center">
+                            <form method="post" asp-controller="Cart" asp-action="UpdateQuantity" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="equipmentId" value="@item.EquipmentId">
+                                <div class="input-group input-group-sm" style="width: 100px;">
+                                    <input type="number" name="quantity" class="form-control text-center" value="@item.Quantity" min="1" max="10" required>
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">Cập Nhật</button>
+                                </div>
+                            </form>
+                        </td>
+                        <td>@item.Total.ToString("N0") VNĐ</td>
+                        <td class="text-center">
+                            <form method="post" asp-controller="Cart" asp-action="Remove" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="equipmentId" value="@item.EquipmentId">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8"></div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                        <p class="mb-2">
+                            <strong>Số Thiết Bị:</strong> @Model.Count
+                        </p>
+                        <p class="mb-3">
+                            <strong>Giá Tổng/Ngày:</strong> @Model.Sum(x => x.Total).ToString("N0") VNĐ
+                        </p>
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-primary" asp-area="" asp-controller="Rental" asp-action="Checkout">
+                            <i class="bi bi-cash-coin"></i> Tiến Hành Thanh Toán
+                        </a>
+                        <a class="btn btn-outline-secondary" asp-area="" asp-controller="Equipment" asp-action="Index">
+                            <i class="bi bi-arrow-left"></i> Tiếp Tục Mua Sắm
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-bag-x" style="font-size: 2rem;"></i>
+        <p class="mt-3 mb-0">Giỏ Hàng Trống</p>
+        <a class="btn btn-primary mt-3" asp-area="" asp-controller="Equipment" asp-action="Index">
+            <i class="bi bi-shop"></i> Tiếp Tục Mua Sắm
+        </a>
+    </div>
+}

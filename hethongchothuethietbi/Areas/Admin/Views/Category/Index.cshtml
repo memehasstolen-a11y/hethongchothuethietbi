@@ -1,0 +1,50 @@
+@model List<Category>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Quản Lý Danh Mục</h3>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Tạo Danh Mục
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Tên Danh Mục</th>
+                <th>Mô Tả</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in Model)
+            {
+                <tr>
+                    <td>#@category.Id</td>
+                    <td>@category.Name</td>
+                    <td>@category.Description</td>
+                    <td>
+                        <a href="@Url.Action("Edit", new { id = category.Id })" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i> Sửa
+                        </a>
+                        <form method="post" action="@Url.Action("Delete")" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@category.Id">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa danh mục này?')">
+                                <i class="bi bi-trash"></i> Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">
+        <i class="bi bi-inbox"></i> Không có danh mục nào
+    </div>
+}

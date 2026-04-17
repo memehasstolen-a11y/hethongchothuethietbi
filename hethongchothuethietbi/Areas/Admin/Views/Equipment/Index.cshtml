@@ -1,0 +1,137 @@
+@model List<Equipment>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Quản Lý Thiết Bị</h3>
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Tạo Thiết Bị Mới
+    </a>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm thiết bị..." value="@ViewBag.Search">
+            </div>
+            <div class="col-md-4">
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="name" selected="@("name" == ViewBag.Sort ? "selected" : "")">Sắp xếp theo tên</option>
+                    <option value="price_asc" selected="@("price_asc" == ViewBag.Sort ? "selected" : "")">Giá tăng dần</option>
+                    <option value="price_desc" selected="@("price_desc" == ViewBag.Sort ? "selected" : "")">Giá giảm dần</option>
+                    <option value="status" selected="@("status" == ViewBag.Sort ? "selected" : "")">Theo trạng thái</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-info w-100">
+                    <i class="bi bi-search"></i> Tìm Kiếm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Equipment Table -->
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Tên Thiết Bị</th>
+                <th>Danh Mục</th>
+                <th>Giá/Ngày</th>
+                <th>Số Lượng</th>
+                <th>Trạng Thái</th>
+                <th>Ghi Chú</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var equipment in Model)
+            {
+                <tr>
+                    <td>#@equipment.Id</td>
+                    <td>@equipment.Name</td>
+                    <td>@equipment.Category?.Name</td>
+                    <td>@equipment.PricePerDay.ToString("N0") VNĐ</td>
+                    <td>
+                        <span class="badge @(equipment.Quantity > 0 ? "bg-success" : "bg-danger")">
+                            @equipment.Quantity
+                        </span>
+                    </td>
+                    <td>
+                        @{
+                            var statusBadge = equipment.Status switch
+                            {
+                                EquipmentStatus.Available => "success",
+                                EquipmentStatus.Rented => "warning",
+                                EquipmentStatus.Broken => "danger",
+                                EquipmentStatus.Maintenance => "info",
+                                _ => "secondary"
+                            };
+                        }
+                        <span class="badge bg-@statusBadge">@equipment.Status.ToString()</span>
+                    </td>
+                    <td>@equipment.ConditionNotes</td>
+                    <td>
+                        <a href="@Url.Action("Edit", new { id = equipment.Id })" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i> Sửa
+                        </a>
+                        <form method="post" action="@Url.Action("Delete")" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@equipment.Id">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa thiết bị này?')">
+                                <i class="bi bi-trash"></i> Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">
+        <i class="bi bi-inbox"></i> Không có thiết bị nào
+    </div>
+}
+
+<!-- Pagination -->
+@{
+    int totalPages = (int)Math.Ceiling((double)ViewBag.Total / ViewBag.PageSize);
+    if (totalPages > 1)
+    {
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                @if (ViewBag.Page > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.Page - 1, search = ViewBag.Search, sort = ViewBag.Sort })">
+                            Trước
+                        </a>
+                    </li>
+                }
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = i, search = ViewBag.Search, sort = ViewBag.Sort })">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                @if (ViewBag.Page < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.Page + 1, search = ViewBag.Search, sort = ViewBag.Sort })">
+                            Tiếp
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

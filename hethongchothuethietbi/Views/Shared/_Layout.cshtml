@@ -1,0 +1,205 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hệ Thống Cho Thuê Thiết Bị</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout-custom.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid px-4">
+                <!-- Brand Logo -->
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" title="Về Trang Chủ">
+                    <i class="bi bi-tools"></i>
+                    <span>Cho Thuê Thiết Bị</span>
+                </a>
+
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Navigation Menu -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <!-- Browse Equipment -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Equipment" asp-action="Index" title="Duyệt Danh Sách Thiết Bị">
+                                <i class="bi bi-shop"></i> Duyệt Thiết Bị
+                            </a>
+                        </li>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <!-- Shopping Cart (Chỉ Customer) -->
+                            @if (!User.IsInRole("Staff") && !User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="Cart" asp-action="Index" title="Xem Giỏ Hàng">
+                                        <i class="bi bi-bag"></i> Giỏ Hàng
+                                    </a>
+                                </li>
+                            }
+
+                            <!-- My Orders (Chỉ Customer) -->
+                            @if (!User.IsInRole("Staff") && !User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="Rental" asp-action="MyOrders" title="Xem Đơn Thuê Của Tôi">
+                                        <i class="bi bi-receipt"></i> Đơn Của Tôi
+                                    </a>
+                                </li>
+                            }
+
+                            <!-- Admin/Staff Management Panel -->
+                            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Index" title="Vào Bảng Quản Lý">
+                                        <i class="bi bi-speedometer2"></i> Quản Lý
+                                    </a>
+                                </li>
+                            }
+
+                            <!-- User Dropdown Menu -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Người Dùng">
+                                    <i class="bi bi-person-circle"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                                    <li>
+                                        <a class="dropdown-item" href="@Url.Action("Index", "Profile")" title="Xem Hồ Sơ Cá Nhân">
+                                            <i class="bi bi-person"></i> Hồ Sơ Của Tôi
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="@Url.Action("Edit", "Profile")" title="Chỉnh Sửa Hồ Sơ">
+                                            <i class="bi bi-pencil"></i> Chỉnh Sửa Hồ Sơ
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" asp-area="" asp-controller="Account" asp-action="Logout" class="d-block">
+                                            <button type="submit" class="dropdown-item text-danger" title="Đăng Xuất Khỏi Hệ Thống">
+                                                <i class="bi bi-box-arrow-right"></i> Đăng Xuất
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <!-- Login Button -->
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login" title="Đăng Nhập Tài Khoản">
+                                    <i class="bi bi-box-arrow-in-right"></i> Đăng Nhập
+                                </a>
+                            </li>
+
+                            <!-- Register Button -->
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Register" title="Tạo Tài Khoản Mới">
+                                    <i class="bi bi-person-plus"></i> Đăng Ký
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main role="main" class="flex-grow-1">
+        <div class="container-fluid px-4">
+            <!-- Success Alert -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> <strong>Thành Công!</strong> @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- Error Alert -->
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> <strong>Lỗi!</strong> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- Page Content -->
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container-fluid px-4">
+            <div class="row">
+                <!-- Company Info -->
+                <div class="col-md-3 col-sm-6 footer-section">
+                    <h6><i class="bi bi-tools"></i> Cho Thuê Thiết Bị</h6>
+                    <p style="font-size: 0.9rem; color: #ccc;">
+                        Giải pháp cho thuê thiết Bị số 1 tại Việt Nam. Chất lượng cao, giá cạnh tranh.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="col-md-3 col-sm-6 footer-section">
+                    <h6><i class="bi bi-link-45deg"></i> Liên Kết Nhanh</h6>
+                    <ul>
+                        <li><a href="@Url.Action("Index", "Home")">Trang Chủ</a></li>
+                        <li><a href="@Url.Action("Index", "Equipment")">Duyệt Thiết Bị</a></li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li><a href="@Url.Action("MyOrders", "Rental")">Đơn Của Tôi</a></li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Customer Support -->
+                <div class="col-md-3 col-sm-6 footer-section">
+                    <h6><i class="bi bi-headset"></i> Hỗ Trợ Khách Hàng</h6>
+                    <ul>
+                        <li><a href="tel:+84123456789"><i class="bi bi-telephone"></i> 0123.456.789</a></li>
+                        <li><a href="mailto:support@rentequipment.com"><i class="bi bi-envelope"></i> support@rentequipment.com</a></li>
+                        <li style="color: #ccc;"><i class="bi bi-geo-alt"></i> Hà Nội, Việt Nam</li>
+                    </ul>
+                </div>
+
+                <!-- About -->
+                <div class="col-md-3 col-sm-6 footer-section">
+                    <h6><i class="bi bi-info-circle"></i> Về Chúng Tôi</h6>
+                    <ul>
+                        <li><a href="#">Điều Khoản Sử Dụng</a></li>
+                        <li><a href="#">Chính Sách Bảo Mật</a></li>
+                        <li><a href="#">Hỗ Trợ</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <p class="mb-0">&copy; 2025 Hệ Thống Cho Thuê Thiết Bị. Tất Cả Quyền Được Bảo Vệ.</p>
+                <small style="color: #999;">Thiết Kế & Phát Triển Bởi <strong>Dev Team</strong></small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,109 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card border-left-primary shadow h-100 py-3">
+            <div class="card-body">
+                <div class="text-primary text-uppercase mb-1">
+                    <small><i class="bi bi-receipt"></i> Tổng Đơn Hàng</small>
+                </div>
+                <div class="h3 mb-0">@ViewBag.TotalOrders</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card border-left-success shadow h-100 py-3">
+            <div class="card-body">
+                <div class="text-success text-uppercase mb-1">
+                    <small><i class="bi bi-cash-coin"></i> Tổng Doanh Thu</small>
+                </div>
+                <div class="h3 mb-0">@ViewBag.TotalRevenue.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card border-left-info shadow h-100 py-3">
+            <div class="card-body">
+                <div class="text-info text-uppercase mb-1">
+                    <small><i class="bi bi-box-seam"></i> Thiết Bị</small>
+                </div>
+                <div class="h3 mb-0">@ViewBag.TotalEquipment</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card border-left-warning shadow h-100 py-3">
+            <div class="card-body">
+                <div class="text-warning text-uppercase mb-1">
+                    <small><i class="bi bi-exclamation-triangle"></i> Thiết Bị Hư</small>
+                </div>
+                <div class="h3 mb-0">@ViewBag.BrokenEquipment</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-clock"></i> Đơn Hàng Chờ Thanh Toán
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="h2 mb-0">@ViewBag.PendingOrders</div>
+                <p class="text-muted small">Cần xử lý sớm</p>
+                <a href="@Url.Action("Index", "Order", new { area = "Admin" })" class="btn btn-sm btn-primary">
+                    Xem Chi Tiết
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-graph-up"></i> Doanh Thu Tháng Này
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="h2 mb-0">Đang cập nhật...</div>
+                <p class="text-muted small">Thống kê theo tháng</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-primary {
+        border-left: 4px solid #007bff !important;
+    }
+    .border-left-success {
+        border-left: 4px solid #28a745 !important;
+    }
+    .border-left-info {
+        border-left: 4px solid #17a2b8 !important;
+    }
+    .border-left-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+    .text-primary {
+        color: #007bff;
+    }
+    .text-success {
+        color: #28a745;
+    }
+    .text-info {
+        color: #17a2b8;
+    }
+    .text-warning {
+        color: #ffc107;
+    }
+</style>

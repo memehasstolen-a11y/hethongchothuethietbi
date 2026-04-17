@@ -1,0 +1,56 @@
+@model AppUser
+
+@{
+    ViewData["Title"] = "Hồ Sơ Của Tôi";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-circle"></i> Thông Tin Hồ Sơ
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Email</strong></label>
+                            <p class="form-control-plaintext">@Model.Email</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Họ Và Tên</strong></label>
+                            <p class="form-control-plaintext">@Model.FullName</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Số Điện Thoại</strong></label>
+                            <p class="form-control-plaintext">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Số CCCD</strong></label>
+                            <p class="form-control-plaintext">@(string.IsNullOrEmpty(Model.CccdNumber) ? "Chưa cập nhật" : Model.CccdNumber)</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Địa Chỉ</strong></label>
+                        <p class="form-control-plaintext">@(string.IsNullOrEmpty(Model.Address) ? "Chưa cập nhật" : Model.Address)</p>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Edit")" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Chỉnh Sửa Hồ Sơ
+                        </a>
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
+                            <i class="bi bi-house"></i> Về Trang Chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,187 @@
+@model CheckoutViewModel
+
+@{
+    ViewData["Title"] = "Thanh Toán";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <h3 class="mb-4">
+            <i class="bi bi-cash-coin"></i> Thanh Toán Đơn Hàng
+        </h3>
+
+        <!-- Danh sách các thiết bị -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Danh Sách Thiết Bị</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Thiết Bị</th>
+                            <th class="text-end">Giá/Ngày</th>
+                            <th class="text-center">Số Lượng</th>
+                            <th class="text-end">Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items != null && Model.Items.Any())
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>@item.EquipmentName</td>
+                                    <td class="text-end">@item.PricePerDay.ToString("N0") VNĐ</td>
+                                    <td class="text-center">@item.Quantity</td>
+                                    <td class="text-end">@item.Total.ToString("N0") VNĐ</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <form method="post" asp-action="Checkout" class="needs-validation">
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Có lỗi xảy ra:</strong>
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông Tin Thanh Toán</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ngày Bắt Đầu Thuê</label>
+                            <input type="datetime-local" class="form-control" name="ExpectedPickUpTime" 
+                                   value="@Model.ExpectedPickUpTime.ToString("yyyy-MM-ddTHH:mm")" required onchange="updateTotal()">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ngày Kết Thúc Thuê</label>
+                            <input type="datetime-local" class="form-control" name="ExpectedReturnTime" 
+                                   value="@Model.ExpectedReturnTime.ToString("yyyy-MM-ddTHH:mm")" required onchange="updateTotal()">
+                        </div>
+                    </div>
+                    <small class="text-danger">
+                        <i class="bi bi-exclamation-circle"></i> Thời gian thuê tối thiểu 24 giờ
+                    </small>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Xác Nhận Đơn Hàng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                        <label class="form-check-label" for="terms">
+                            Tôi đồng ý với các điều khoản và điều kiện
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Xác Nhận Đơn Hàng
+                </button>
+                <a class="btn btn-outline-secondary" asp-action="MyOrders">
+                    <i class="bi bi-arrow-left"></i> Quay Lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Tóm Tắt Đơn Hàng</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <p class="mb-2">
+                        <strong>Số Thiết Bị:</strong> 
+                        @(Model.Items?.Count ?? 0)
+                    </p>
+                    <hr>
+                    <p class="mb-2">
+                        <strong>Tổng Giá/Ngày:</strong>
+                        <span id="totalPrice">@Model.Items?.Sum(x => x.PricePerDay * x.Quantity).ToString("N0") ?? "0"</span> VNĐ
+                    </p>
+                    <p class="mb-2">
+                        <strong>Cọc (30%):</strong>
+                        <span id="depositPrice">@Model.DepositAmount.ToString("N0")</span> VNĐ
+                    </p>
+                    <hr>
+                    <p class="mb-3">
+                        <strong>Số Ngày Thuê:</strong>
+                        <span id="rentalDays">0</span> ngày
+                    </p>
+                    <p class="mb-0">
+                        <strong>Tổng Tiền:</strong>
+                        <h4 class="text-danger" id="totalAmount">@Model.TotalAmount.ToString("N0") VNĐ</h4>
+                    </p>
+                </div>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-outline-primary" asp-controller="Cart" asp-action="Index">
+                        <i class="bi bi-bag"></i> Quay Về Giỏ Hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function updateTotal() {
+    const pickupInput = document.querySelector('input[name="ExpectedPickUpTime"]');
+    const returnInput = document.querySelector('input[name="ExpectedReturnTime"]');
+
+    if (pickupInput.value && returnInput.value) {
+        const pickup = new Date(pickupInput.value);
+        const returnDate = new Date(returnInput.value);
+        const diffTime = Math.abs(returnDate - pickup);
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Cập nhật số ngày
+        document.getElementById('rentalDays').textContent = days;
+
+        // Tính tổng tiền (lấy giá từ bảng)
+        let totalPerDay = 0;
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(row => {
+            const priceText = row.children[1].textContent.replace(/[^\d]/g, '');
+            const qty = parseInt(row.children[2].textContent);
+            totalPerDay += parseInt(priceText) * qty;
+        });
+
+        const totalAmount = totalPerDay * days;
+        const deposit = Math.round(totalAmount * 0.3);
+
+        document.getElementById('totalPrice').textContent = totalPerDay.toLocaleString('vi-VN');
+        document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('vi-VN') + ' VNĐ';
+        document.getElementById('depositPrice').textContent = deposit.toLocaleString('vi-VN');
+    }
+}
+
+// Gọi updateTotal khi trang load
+window.addEventListener('load', updateTotal);
+</script>
+}

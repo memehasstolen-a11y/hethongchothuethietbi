@@ -1,0 +1,101 @@
+@model Equipment
+
+<div class="d-flex align-items-center mb-4">
+    <h3>Chỉnh Sửa Thiết Bị</h3>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Có lỗi xảy ra:</strong>
+        <ul class="mb-0">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow">
+    <div class="card-body">
+        <form method="post" action="@Url.Action("Edit")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id">
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Tên Thiết Bị *</label>
+                        <input type="text" asp-for="Name" class="form-control" required>
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Danh Mục *</label>
+                        @Html.DropDownListFor(m => m.CategoryId, 
+                            ViewBag.Categories != null ? new SelectList(ViewBag.Categories, "Id", "Name", Model.CategoryId) : new SelectList(new List<Category>()), 
+                            "-- Chọn Danh Mục --", 
+                            new { @class = "form-select", required = "required" })
+                        <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Giá/Ngày (VNĐ) *</label>
+                        <input type="number" asp-for="PricePerDay" class="form-control" step="1000" min="0" required>
+                        <span asp-validation-for="PricePerDay" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Số Lượng *</label>
+                        <input type="number" asp-for="Quantity" class="form-control" min="0" required>
+                        <span asp-validation-for="Quantity" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Trạng Thái *</label>
+                        <select asp-for="Status" class="form-select" required>
+                            <option value="@EquipmentStatus.Available" selected="@(Model.Status == EquipmentStatus.Available)">Sẵn Có</option>
+                            <option value="@EquipmentStatus.Rented" selected="@(Model.Status == EquipmentStatus.Rented)">Đang Thuê</option>
+                            <option value="@EquipmentStatus.Broken" selected="@(Model.Status == EquipmentStatus.Broken)">Hư Hỏng</option>
+                            <option value="@EquipmentStatus.Maintenance" selected="@(Model.Status == EquipmentStatus.Maintenance)">Bảo Trì</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Ghi Chú Tình Trạng</label>
+                <textarea asp-for="ConditionNotes" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="ConditionNotes" class="text-danger small"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Cập Nhật Thiết Bị
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay Lại
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

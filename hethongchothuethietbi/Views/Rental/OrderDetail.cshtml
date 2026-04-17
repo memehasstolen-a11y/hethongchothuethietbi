@@ -1,0 +1,176 @@
+@model RentalOrder
+
+@{
+    ViewData["Title"] = "Chi Tiết Đơn Hàng";
+}
+
+<div class="mb-4">
+    <a class="btn btn-outline-secondary" asp-action="MyOrders">
+        <i class="bi bi-arrow-left"></i> Quay Lại
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thông Tin Đơn Hàng</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">Mã Đơn:</dt>
+                    <dd class="col-sm-7">#@Model.Id</dd>
+
+                    <dt class="col-sm-5">Trạng Thái:</dt>
+                    <dd class="col-sm-7">
+                        @{
+                            var badgeColor = Model.OrderStatus switch
+                            {
+                                RentalOrderStatus.PendingPayment => "warning",
+                                RentalOrderStatus.Deposited => "info",
+                                RentalOrderStatus.Rented => "primary",
+                                RentalOrderStatus.Completed => "success",
+                                _ => "secondary"
+                            };
+                        }
+                        <span class="badge bg-@badgeColor">@Model.OrderStatus.ToString()</span>
+                    </dd>
+
+                    <dt class="col-sm-5">Ngày Tạo:</dt>
+                    <dd class="col-sm-7">@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thông Tin Tài Chính</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">Tổng Tiền:</dt>
+                    <dd class="col-sm-7">@Model.TotalAmount.ToString("N0") VNĐ</dd>
+
+                    <dt class="col-sm-5">Tiền Cọc:</dt>
+                    <dd class="col-sm-7">@Model.DepositAmount.ToString("N0") VNĐ</dd>
+
+                    <dt class="col-sm-5">Phí Phạt:</dt>
+                    <dd class="col-sm-7">@Model.PenaltyAmount.ToString("N0") VNĐ</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Chi Tiết Thiết Bị</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tên Thiết Bị</th>
+                        <th class="text-end">Giá/Ngày</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detail in Model.Details)
+                    {
+                        <tr>
+                            <td>@detail.Equipment.Name</td>
+                            <td class="text-end">@detail.UnitPriceAtBooking.ToString("N0") VNĐ</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (Model.Comments.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Biên Lai & Ghi Chú</h5>
+        </div>
+        <div class="card-body">
+            @foreach (var comment in Model.Comments)
+            {
+                <div class="mb-3">
+                    <p class="mb-2"><strong>@comment.Author?.FullName:</strong> @comment.Content</p>
+                    <small class="text-muted">@comment.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small>
+                    @if (!string.IsNullOrEmpty(comment.ImageUrl))
+                    {
+                        <br />
+                        <img src="@comment.ImageUrl" class="img-thumbnail mt-2" style="max-width: 300px;" />
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (Model.OrderStatus == RentalOrderStatus.PendingPayment)
+{
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Gửi Biên Lai Thanh Toán</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="@Url.Action("UploadPaymentProof")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderId" value="@Model.Id" />
+                <div class="mb-3">
+                    <label class="form-label">📸 Chụp ảnh biên lai thanh toán:</label>
+                    <input type="file" name="proofImage" class="form-control" accept="image/*" required>
+                    <small class="form-text text-muted">JPG, PNG</small>
+                </div>
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-upload"></i> Gửi Biên Lai
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+@if (Model.OrderStatus != RentalOrderStatus.Rented && Model.OrderStatus != RentalOrderStatus.Completed)
+{
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="@Url.Action("CancelOrder")" style="display:inline;" onsubmit="return confirm('Xác nhận hủy đơn hàng?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="bi bi-x-circle"></i> Hủy Đơn
+                </button>
+            </form>
+
+            <form method="post" action="@Url.Action("DeleteOrder")" style="display:inline;" onsubmit="return confirm('Xóa đơn hàng này? Hành động không thể hoàn tác!');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Xóa Đơn
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+@if (Model.OrderStatus == RentalOrderStatus.Completed)
+{
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="@Url.Action("DeleteOrder")" style="display:inline;" onsubmit="return confirm('Xóa đơn hàng này? Hành động không thể hoàn tác!');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Xóa Đơn
+                </button>
+            </form>
+        </div>
+    </div>
+}

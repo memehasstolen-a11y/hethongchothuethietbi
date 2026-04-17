@@ -1,0 +1,67 @@
+@model AppUser
+
+@{
+    ViewData["Title"] = "Chỉnh Sửa Hồ Sơ";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Chỉnh Sửa Hồ Sơ
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="@Url.Action("Edit")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id">
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email *</label>
+                                <input type="email" asp-for="Email" class="form-control" disabled>
+                                <small class="text-muted">Không thể thay đổi email</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Họ Và Tên *</label>
+                                <input type="text" asp-for="FullName" class="form-control" required>
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Số Điện Thoại</label>
+                                <input type="tel" asp-for="PhoneNumber" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số CCCD</label>
+                                <input type="text" asp-for="CccdNumber" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Địa Chỉ</label>
+                            <textarea asp-for="Address" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Lưu Thay Đổi
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Quay Lại
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

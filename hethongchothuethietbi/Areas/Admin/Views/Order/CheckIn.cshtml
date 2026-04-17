@@ -1,0 +1,109 @@
+@model RentalOrder
+
+@{
+    var lateFee = (decimal?)ViewBag.LateFee ?? 0m;
+    var totalWithFee = Model.TotalAmount + lateFee;
+}
+
+<div class="card mb-4">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">Nhận lại thiết bị - Đơn #@Model.Id</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6>Thông tin khách hàng</h6>
+                <dl class="row">
+                    <dt class="col-sm-5">Tên:</dt>
+                    <dd class="col-sm-7">@Model.Customer.FullName</dd>
+
+                    <dt class="col-sm-5">CCCD:</dt>
+                    <dd class="col-sm-7">@Model.Customer.CccdNumber</dd>
+
+                    <dt class="col-sm-5">Địa chỉ:</dt>
+                    <dd class="col-sm-7">@Model.Customer.Address</dd>
+                </dl>
+            </div>
+
+            <div class="col-md-6">
+                <h6>Thông tin đơn hàng</h6>
+                <dl class="row">
+                    <dt class="col-sm-5">Ngày bắt đầu:</dt>
+                    <dd class="col-sm-7">@Model.ExpectedPickUpTime.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-5">Ngày kết thúc:</dt>
+                    <dd class="col-sm-7">@Model.ExpectedReturnTime.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-5">Thời gian thực tế:</dt>
+                    <dd class="col-sm-7">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6>Thiết bị nhận lại</h6>
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Thiết bị</th>
+                        <th class="text-center">Số lượng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detail in Model.Details)
+                    {
+                        <tr>
+                            <td>@detail.Equipment.Name</td>
+                            <td class="text-center">1</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (lateFee > 0)
+        {
+            <div class="alert alert-danger" role="alert">
+                <h6><i class="bi bi-exclamation-triangle"></i> Cảnh báo: Khách hàng trả trễ!</h6>
+                <dl class="row">
+                    <dt class="col-sm-6">Tổng tiền thuê:</dt>
+                    <dd class="col-sm-6">@Model.TotalAmount.ToString("C")</dd>
+
+                    <dt class="col-sm-6">Phí trả trễ:</dt>
+                    <dd class="col-sm-6"><strong>@lateFee.ToString("C")</strong></dd>
+
+                    <dt class="col-sm-6">Tổng cộng:</dt>
+                    <dd class="col-sm-6"><strong class="text-danger">@totalWithFee.ToString("C")</strong></dd>
+                </dl>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success" role="alert">
+                <h6><i class="bi bi-check-circle"></i> Trả đúng hạn</h6>
+                <p class="mb-0">Tổng tiền: <strong>@Model.TotalAmount.ToString("C")</strong></p>
+            </div>
+        }
+
+        <form method="post" action="@Url.Action("ConfirmCheckIn", new { id = Model.Id })">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="lateFee" value="@lateFee" />
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="confirmed" required>
+                <label class="form-check-label" for="confirmed">
+                    ✓ Tôi xác nhận đã nhận lại tất cả thiết bị và thanh toán đầy đủ
+                </label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Xác nhận nhận lại
+                </button>
+                <a href="@Url.Action("Detail", new { id = Model.Id })" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
