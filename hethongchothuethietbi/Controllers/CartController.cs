@@ -18,8 +18,19 @@ namespace hethongchothuethietbi.Controllers
         // POST: Add to Cart
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddToCart(int equipmentId)
+        public async Task<IActionResult> AddToCart(int equipmentId)
         {
+            var equipment = await _context.Equipments.FindAsync(equipmentId);
+            if (equipment == null || equipment.Quantity <= 0)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "Sản phẩm này đã hết hàng!" });
+                }
+                TempData["Error"] = "Sản phẩm này đã hết hàng!";
+                return RedirectToAction("Index", "Equipment");
+            }
+
             var cart = HttpContext.Session.GetObject<List<CartItem>>("Cart") ?? new List<CartItem>();
             var existingItem = cart.FirstOrDefault(c => c.EquipmentId == equipmentId);
 

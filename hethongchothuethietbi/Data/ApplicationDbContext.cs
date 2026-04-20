@@ -16,6 +16,7 @@ namespace hethongchothuethietbi.Data
         public DbSet<RentalOrder> RentalOrders { get; set; }
         public DbSet<RentalOrderDetail> RentalOrderDetails { get; set; }
         public DbSet<OrderComment> OrderComments { get; set; }
+        public DbSet<OrderMessage> OrderMessages { get; set; }
         public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)

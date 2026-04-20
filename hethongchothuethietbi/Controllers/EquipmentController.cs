@@ -20,7 +20,6 @@ namespace hethongchothuethietbi.Controllers
         {
             int pageSize = 9;
             IQueryable<Equipment> query = _context.Equipments
-                .Where(e => e.Status == EquipmentStatus.Available)
                 .Include(e => e.Category);
 
             // Search

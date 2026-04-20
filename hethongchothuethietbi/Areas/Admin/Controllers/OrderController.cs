@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using hethongchothuethietbi.Data;
 using hethongchothuethietbi.Models;
@@ -12,11 +13,13 @@ namespace hethongchothuethietbi.Areas.Admin.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _hostEnvironment;
+        private readonly UserManager<AppUser> _userManager;
 
-        public OrderController(ApplicationDbContext context, IWebHostEnvironment hostEnvironment)
+        public OrderController(ApplicationDbContext context, IWebHostEnvironment hostEnvironment, UserManager<AppUser> userManager)
         {
             _context = context;
             _hostEnvironment = hostEnvironment;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index(string orderStatus = null)
@@ -49,6 +52,8 @@ namespace hethongchothuethietbi.Areas.Admin.Controllers
                     .ThenInclude(d => d.Equipment)
                 .Include(o => o.Comments)
                     .ThenInclude(c => c.Author)
+                .Include(o => o.Messages)
+                    .ThenInclude(m => m.Sender)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
@@ -402,6 +407,247 @@ namespace hethongchothuethietbi.Areas.Admin.Controllers
 
             TempData["Success"] = "Xóa đơn hàng thành công!";
             return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> ExportInvoice(int id)
+        {
+            var order = await _context.RentalOrders
+                .Include(o => o.Customer)
+                .Include(o => o.Details)
+                    .ThenInclude(d => d.Equipment)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+                return NotFound();
+
+            // Cho phép in hoá đơn ở trạng thái Completed (hoá đơn thanh toán)
+            if (order.OrderStatus != RentalOrderStatus.Completed)
+            {
+                TempData["Error"] = "Chỉ có thể in hoá đơn cho đơn hàng đã hoàn tất!";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+
+            var html = GenerateInvoiceHtml(order);
+            var pdf = System.Text.Encoding.UTF8.GetBytes(html);
+
+            return File(pdf, "application/octet-stream", $"Invoice_{order.Id}_{DateTime.Now:yyyyMMddHHmmss}.html");
+        }
+
+        public async Task<IActionResult> ExportHandoverInvoice(int id)
+        {
+            var order = await _context.RentalOrders
+                .Include(o => o.Customer)
+                .Include(o => o.Details)
+                    .ThenInclude(d => d.Equipment)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+                return NotFound();
+
+            // Cho phép in hoá đơn bàn giao ở trạng thái Rented (hoá đơn bàn giao)
+            if (order.OrderStatus != RentalOrderStatus.Rented)
+            {
+                TempData["Error"] = "Chỉ có thể in hoá đơn bàn giao cho đơn hàng đang thuê!";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+
+            var html = GenerateHandoverInvoiceHtml(order);
+            var pdf = System.Text.Encoding.UTF8.GetBytes(html);
+
+            return File(pdf, "application/octet-stream", $"Handover_{order.Id}_{DateTime.Now:yyyyMMddHHmmss}.html");
+        }
+
+        private string GenerateInvoiceHtml(RentalOrder order)
+        {
+            var detailsHtml = string.Join("", order.Details.Select((d, i) => 
+                $@"<tr>
+                    <td>{i + 1}</td>
+                    <td>{d.Equipment?.Name}</td>
+                    <td>{d.Quantity}</td>
+                    <td>{d.UnitPriceAtBooking:N0} VND</td>
+                    <td>{(d.Quantity * d.UnitPriceAtBooking):N0} VND</td>
+                </tr>"));
+
+            var rentalDays = (order.ExpectedReturnTime - order.ExpectedPickUpTime).TotalDays;
+
+            return $@"
+<!DOCTYPE html>
+<html lang='vi'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Hoá đơn - Đơn #{order.Id}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }}
+        .title {{ font-size: 22px; font-weight: bold; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
+        th {{ background: #f0f0f0; font-weight: bold; }}
+        .total-section {{ text-align: right; margin-top: 20px; }}
+        .total-line {{ font-size: 16px; font-weight: bold; margin-top: 10px; }}
+        .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <div class='title'>🧾 HOÁ ĐƠN CHO THUÊ THIẾT BỊ</div>
+        <div style='margin-top: 10px; color: #666;'>Đơn hàng #{order.Id}</div>
+    </div>
+
+    <table>
+        <tr><td style='font-weight: bold;'>Khách hàng:</td><td>{order.Customer?.UserName}</td></tr>
+        <tr><td style='font-weight: bold;'>Địa chỉ:</td><td>{order.Customer?.Address}</td></tr>
+        <tr><td style='font-weight: bold;'>CCCD:</td><td>{order.Customer?.CccdNumber}</td></tr>
+        <tr><td style='font-weight: bold;'>Ngày nhận:</td><td>{order.ExpectedPickUpTime:dd/MM/yyyy HH:mm}</td></tr>
+        <tr><td style='font-weight: bold;'>Ngày trả:</td><td>{order.ExpectedReturnTime:dd/MM/yyyy HH:mm}</td></tr>
+        <tr><td style='font-weight: bold;'>Thực tế trả:</td><td>{order.ActualReturnTime?.ToString("dd/MM/yyyy HH:mm") ?? "N/A"}</td></tr>
+    </table>
+
+    <h3>Chi tiết thiết bị:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Tên thiết bị</th>
+                <th>Số lượng</th>
+                <th>Giá/ngày</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {detailsHtml}
+        </tbody>
+    </table>
+
+    <div class='total-section'>
+        <div>Số ngày thuê: <strong>{rentalDays:F0} ngày</strong></div>
+        <div class='total-line'>Tổng tiền thuê: {order.TotalAmount:N0} VND</div>
+        <div>Tiền cọc: {order.DepositAmount:N0} VND</div>
+        <div>Phạt trễ hạn: {order.PenaltyAmount:N0} VND</div>
+        <div class='total-line'>Cần thanh toán: {(order.TotalAmount + order.PenaltyAmount - order.DepositAmount):N0} VND</div>
+    </div>
+
+    <div class='footer'>
+        <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+        <p>In ngày: {DateTime.Now:dd/MM/yyyy HH:mm:ss}</p>
+    </div>
+</body>
+</html>";
+        }
+
+        private string GenerateHandoverInvoiceHtml(RentalOrder order)
+        {
+            var detailsHtml = string.Join("", order.Details.Select((d, i) => 
+                $@"<tr>
+                    <td>{i + 1}</td>
+                    <td>{d.Equipment?.Name}</td>
+                    <td>{d.Quantity}</td>
+                    <td>{d.UnitPriceAtBooking:N0} VND</td>
+                    <td>{(d.Quantity * d.UnitPriceAtBooking):N0} VND</td>
+                </tr>"));
+
+            var rentalDays = (order.ExpectedReturnTime - order.ExpectedPickUpTime).TotalDays;
+
+            return $@"
+<!DOCTYPE html>
+<html lang='vi'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Hoá Đơn Bàn Giao - Đơn #{order.Id}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f39c12; padding-bottom: 15px; }}
+        .title {{ font-size: 22px; font-weight: bold; color: #f39c12; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
+        th {{ background: #f39c12; color: white; font-weight: bold; }}
+        .warning {{ background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <div class='title'>📦 HOÁS ĐƠN BÀN GIAO THIẾT BỊ</div>
+        <div style='margin-top: 10px; color: #666;'>Đơn hàng #{order.Id}</div>
+    </div>
+
+    <table>
+        <tr><td style='font-weight: bold;'>Khách hàng:</td><td>{order.Customer?.UserName}</td></tr>
+        <tr><td style='font-weight: bold;'>Địa chỉ:</td><td>{order.Customer?.Address}</td></tr>
+        <tr><td style='font-weight: bold;'>CCCD:</td><td>{order.Customer?.CccdNumber}</td></tr>
+        <tr><td style='font-weight: bold;'>Ngày nhận:</td><td>{order.ExpectedPickUpTime:dd/MM/yyyy HH:mm}</td></tr>
+        <tr><td style='font-weight: bold;'>Ngày trả dự kiến:</td><td>{order.ExpectedReturnTime:dd/MM/yyyy HH:mm}</td></tr>
+    </table>
+
+    <h3>Chi tiết thiết bị bàn giao:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Tên thiết bị</th>
+                <th>Số lượng</th>
+                <th>Giá/ngày</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {detailsHtml}
+        </tbody>
+    </table>
+
+    <div class='warning'>
+        <strong>⚠️ NHẮC NHỠ QUAN TRỌNG:</strong><br>
+        - Khách hàng vui lòng trả thiết bị đúng hạn vào ngày: <strong>{order.ExpectedReturnTime:dd/MM/yyyy HH:mm}</strong><br>
+        - Nếu trả muộn sẽ được tính phí phạt: <strong>5%</strong> giá thuê/ngày<br>
+        - Thiết bị phải trả trong tình trạng nguyên vẹn<br>
+        - Liên hệ ngay nếu có vấn đề hoặc cần gia hạn thêm
+    </div>
+
+    <table>
+        <tr><td style='font-weight: bold;'>Tổng tiền thuê ({rentalDays:F0} ngày):</td><td><strong>{order.TotalAmount:N0} VND</strong></td></tr>
+        <tr><td style='font-weight: bold;'>Tiền cọc đã thu:</td><td>{order.DepositAmount:N0} VND</td></tr>
+        <tr><td style='font-weight: bold;'>Còn phải thanh toán:</td><td><strong>{(order.TotalAmount - order.DepositAmount):N0} VND</strong></td></tr>
+    </table>
+
+    <div class='footer'>
+        <p>Hoá đơn bàn giao - Vui lòng giữ để xác minh khi trả hàng</p>
+        <p>In ngày: {DateTime.Now:dd/MM/yyyy HH:mm:ss}</p>
+    </div>
+</body>
+</html>";
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessage(int id, string messageContent)
+        {
+            var order = await _context.RentalOrders.FindAsync(id);
+            if (order == null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(messageContent))
+            {
+                TempData["Error"] = "Nội dung tin nhắn không được để trống!";
+                return RedirectToAction("Detail", new { id });
+            }
+
+            var message = new OrderMessage
+            {
+                OrderId = id,
+                SenderId = user.Id,
+                Content = messageContent.Trim(),
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _context.OrderMessages.Add(message);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Gửi tin nhắn thành công!";
+            return RedirectToAction("Detail", new { id });
         }
     }
 }

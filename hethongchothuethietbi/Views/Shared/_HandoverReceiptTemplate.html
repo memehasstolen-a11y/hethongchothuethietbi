@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biên lai bàn giao thiết bị</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .title { font-size: 20px; font-weight: bold; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 8px; border: 1px solid #ddd; }
+        .label { font-weight: bold; width: 200px; }
+        .footer { text-align: center; margin-top: 40px; border-top: 2px solid #333; padding-top: 10px; }
+        .signature-area { margin-top: 30px; }
+        .signature-line { border-top: 1px solid #000; width: 200px; display: inline-block; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">BIÊN LAI BÀN GIAO THIẾT BỊ</div>
+        <div style="margin-top: 5px; color: #666;">Hệ Thống Quản Lý Cho Thuê Thiết Bị</div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">Số đơn hàng:</td>
+            <td>{{OrderId}}</td>
+        </tr>
+        <tr>
+            <td class="label">Tên khách hàng:</td>
+            <td>{{CustomerName}}</td>
+        </tr>
+        <tr>
+            <td class="label">CCCD/CMND:</td>
+            <td>{{CccdNumber}}</td>
+        </tr>
+        <tr>
+            <td class="label">Địa chỉ:</td>
+            <td>{{CustomerAddress}}</td>
+        </tr>
+        <tr>
+            <td class="label">Số điện thoại:</td>
+            <td>{{PhoneNumber}}</td>
+        </tr>
+    </table>
+
+    <h3>Chi tiết thiết bị bàn giao:</h3>
+    <table class="info-table">
+        <thead>
+            <tr>
+                <td class="label" style="font-weight: bold;">STT</td>
+                <td style="font-weight: bold;">Tên thiết bị</td>
+                <td style="font-weight: bold;">Số lượng</td>
+                <td style="font-weight: bold;">Giá/ngày</td>
+                <td style="font-weight: bold;">Thành tiền</td>
+            </tr>
+        </thead>
+        <tbody>
+            {{EquipmentDetails}}
+        </tbody>
+    </table>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">Ngày nhận dự kiến:</td>
+            <td>{{PickUpDate}}</td>
+        </tr>
+        <tr>
+            <td class="label">Ngày trả dự kiến:</td>
+            <td>{{ReturnDate}}</td>
+        </tr>
+        <tr>
+            <td class="label">Số ngày thuê:</td>
+            <td>{{RentalDays}} ngày</td>
+        </tr>
+        <tr>
+            <td class="label">Tổng tiền thuê:</td>
+            <td><strong>{{TotalAmount}} VND</strong></td>
+        </tr>
+        <tr>
+            <td class="label">Tiền cọc:</td>
+            <td><strong>{{DepositAmount}} VND</strong></td>
+        </tr>
+        <tr>
+            <td class="label">Cần thanh toán:</td>
+            <td><strong>{{RemainingAmount}} VND</strong></td>
+        </tr>
+    </table>
+
+    <div class="signature-area">
+        <h4>Xác nhận bàn giao:</h4>
+        <div style="margin: 30px 0;">
+            <div style="display: inline-block; margin-right: 100px;">
+                <div>Nhân viên bàn giao:</div>
+                <div class="signature-line"></div>
+                <div style="margin-top: 5px; font-size: 12px;">{{StaffName}} - {{SignDate}}</div>
+            </div>
+            <div style="display: inline-block;">
+                <div>Khách hàng xác nhận:</div>
+                <div class="signature-line"></div>
+                <div style="margin-top: 5px; font-size: 12px;">{{CustomerName}}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>
+        <p style="font-size: 12px; color: #999;">Biên lai này được in tự động. Vui lòng giữ lại để xác minh.</p>
+    </div>
+</body>
+</html>

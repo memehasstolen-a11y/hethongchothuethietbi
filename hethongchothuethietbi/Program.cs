@@ -1,7 +1,9 @@
 using hethongchothuethietbi.Data;
 using hethongchothuethietbi.Models;
+using hethongchothuethietbi.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,15 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+// Cấu hình Hangfire
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(connectionString));
+builder.Services.AddHangfireServer();
+
+// Đăng ký Background Job Service + PDF Service
+builder.Services.AddScoped<BackgroundJobService>();
+builder.Services.AddScoped<PdfGenerationService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -62,6 +73,48 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseSession();
+
+// Cấu hình Hangfire Dashboard endpoint
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
+
+// Đăng ký Background Jobs
+RecurringJob.AddOrUpdate<BackgroundJobService>(
+    "cancel-expired-orders",
+    x => x.CancelExpiredPendingOrders(),
+    Cron.Hourly);
+
+RecurringJob.AddOrUpdate<BackgroundJobService>(
+    "notify-return-dates",
+    x => x.NotifyUpcomingReturnDates(),
+    Cron.Hourly);
+
+RecurringJob.AddOrUpdate<BackgroundJobService>(
+    "apply-late-penalty",
+    x => x.ApplyLatePenalty(),
+    Cron.Hourly);
+
+RecurringJob.AddOrUpdate<BackgroundJobService>(
+    "mark-lost-equipment",
+    x => x.MarkLostEquipment(),
+    Cron.Daily);
 
 app.MapStaticAssets();
 

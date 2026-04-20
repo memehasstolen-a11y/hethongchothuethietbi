@@ -39,6 +39,7 @@ namespace hethongchothuethietbi.Models
         public virtual AppUser Customer { get; set; }
         public virtual ICollection<RentalOrderDetail> Details { get; set; } = new List<RentalOrderDetail>();
         public virtual ICollection<OrderComment> Comments { get; set; } = new List<OrderComment>();
+        public virtual ICollection<OrderMessage> Messages { get; set; } = new List<OrderMessage>();
     }
 
     public enum RentalOrderStatus

@@ -55,6 +55,15 @@
                     <a href="@Url.Action("Index", "User", new { area = "Admin" })" class="@(ViewContext.RouteData.Values["Controller"].ToString() == "User" ? "active" : "")">
                         <i class="bi bi-people-fill"></i> Quản lý tài khoản
                     </a>
+                    <a href="/hangfire" target="_blank">
+                        <i class="bi bi-clock-history"></i> Background Jobs
+                    </a>
+                }
+                else if (User.IsInRole("Staff"))
+                {
+                    <a href="@Url.Action("Index", "Home", new { area = "Admin" })" class="@(ViewContext.RouteData.Values["Controller"].ToString() == "Home" ? "active" : "")">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
                 }
 
                 <!-- Both Admin & Staff xem được đơn hàng -->

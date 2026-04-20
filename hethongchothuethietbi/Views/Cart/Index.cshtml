@@ -31,8 +31,8 @@
                             <form method="post" asp-controller="Cart" asp-action="UpdateQuantity" style="display:inline;">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="equipmentId" value="@item.EquipmentId">
-                                <div class="input-group input-group-sm" style="width: 100px;">
-                                    <input type="number" name="quantity" class="form-control text-center" value="@item.Quantity" min="1" max="10" required>
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <input type="number" name="quantity" class="form-control text-center" style="font-size: 14px;" value="@item.Quantity" min="1" max="10" required>
                                     <button type="submit" class="btn btn-outline-secondary btn-sm">Cập Nhật</button>
                                 </div>
                             </form>

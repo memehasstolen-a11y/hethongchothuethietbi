@@ -190,6 +190,8 @@ namespace hethongchothuethietbi.Controllers
                 .ThenInclude(d => d.Equipment)
                 .Include(o => o.Comments)
                 .ThenInclude(c => c.Author)
+                .Include(o => o.Messages)
+                .ThenInclude(m => m.Sender)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
@@ -365,6 +367,71 @@ namespace hethongchothuethietbi.Controllers
 
             TempData["Success"] = "Xóa đơn hàng thành công!";
             return RedirectToAction("MyOrders");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SoftDeleteOrder(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            var order = await _context.RentalOrders.FindAsync(id);
+            if (order == null)
+                return NotFound();
+
+            if (order.CustomerId != user.Id)
+                return Forbid();
+
+            if (order.OrderStatus != RentalOrderStatus.Completed)
+            {
+                TempData["Error"] = "Chỉ có thể ẩn đơn đã hoàn tất!";
+                return RedirectToAction("OrderDetail", new { id });
+            }
+
+            order.IsDeleted = true;
+            _context.RentalOrders.Update(order);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Đơn hàng đã ẩn khỏi lịch sử!";
+            return RedirectToAction("MyOrders");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessage(int id, string messageContent)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            var order = await _context.RentalOrders.FindAsync(id);
+            if (order == null)
+                return NotFound();
+
+            if (order.CustomerId != user.Id)
+                return Forbid();
+
+            if (string.IsNullOrWhiteSpace(messageContent))
+            {
+                TempData["Error"] = "Nội dung tin nhắn không được để trống!";
+                return RedirectToAction("OrderDetail", new { id });
+            }
+
+            var message = new OrderMessage
+            {
+                OrderId = id,
+                SenderId = user.Id,
+                Content = messageContent.Trim(),
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _context.OrderMessages.Add(message);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Gửi tin nhắn thành công!";
+            return RedirectToAction("OrderDetail", new { id });
         }
     }
 }

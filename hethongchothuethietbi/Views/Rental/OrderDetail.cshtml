@@ -93,26 +93,70 @@
 
 @if (Model.Comments.Any())
 {
-    <div class="card">
+    <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0">Biên Lai & Ghi Chú</h5>
+            <h5 class="mb-0">📝 Biên Lai & Ghi Chú</h5>
         </div>
         <div class="card-body">
             @foreach (var comment in Model.Comments)
             {
-                <div class="mb-3">
-                    <p class="mb-2"><strong>@comment.Author?.FullName:</strong> @comment.Content</p>
+                <div class="mb-3 p-2 border-bottom">
+                    <p class="mb-1"><strong>@(comment.Author?.FullName ?? "Hệ thống"):</strong> @comment.Content</p>
                     <small class="text-muted">@comment.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small>
                     @if (!string.IsNullOrEmpty(comment.ImageUrl))
                     {
                         <br />
-                        <img src="@comment.ImageUrl" class="img-thumbnail mt-2" style="max-width: 300px;" />
+                        <img src="@comment.ImageUrl" class="img-thumbnail mt-2" style="max-width: 300px; cursor:pointer;" onclick="this.style.maxWidth='100%';" />
                     }
                 </div>
             }
         </div>
     </div>
 }
+else
+{
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle"></i> Chưa có ghi chú nào cho đơn hàng này.
+    </div>
+}
+
+<!-- Messaging Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">💬 Tin Nhắn Với Khách Hàng</h5>
+    </div>
+    <div class="card-body" style="height: 300px; overflow-y: auto; background: #f8f9fa;">
+        @{
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+        @if (Model.Messages.Any())
+        {
+            @foreach (var msg in Model.Messages.OrderBy(m => m.CreatedDate))
+            {
+                <div class="mb-3 p-2 @(msg.SenderId == currentUserId ? "text-end" : "")">
+                    <div class="@(msg.SenderId == currentUserId ? "bg-primary text-white" : "bg-light") p-2 rounded d-inline-block" style="max-width: 70%;">
+                        <p class="mb-1">@msg.Content</p>
+                        <small>@msg.Sender?.FullName - @msg.CreatedDate.ToString("HH:mm dd/MM/yyyy")</small>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted text-center mt-3">Chưa có tin nhắn nào</p>
+        }
+    </div>
+    <div class="card-footer">
+        <form method="post" action="@Url.Action("SendMessage", "Rental")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="input-group">
+                <input type="text" name="messageContent" class="form-control" placeholder="Nhập tin nhắn..." required maxlength="1000">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Gửi</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 @if (Model.OrderStatus == RentalOrderStatus.PendingPayment)
 {
@@ -135,25 +179,14 @@
             </form>
         </div>
     </div>
-}
 
-@if (Model.OrderStatus != RentalOrderStatus.Rented && Model.OrderStatus != RentalOrderStatus.Completed)
-{
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-body">
             <form method="post" action="@Url.Action("CancelOrder")" style="display:inline;" onsubmit="return confirm('Xác nhận hủy đơn hàng?');">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
                 <button type="submit" class="btn btn-danger btn-sm">
                     <i class="bi bi-x-circle"></i> Hủy Đơn
-                </button>
-            </form>
-
-            <form method="post" action="@Url.Action("DeleteOrder")" style="display:inline;" onsubmit="return confirm('Xóa đơn hàng này? Hành động không thể hoàn tác!');">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="btn btn-danger btn-sm">
-                    <i class="bi bi-trash"></i> Xóa Đơn
                 </button>
             </form>
         </div>
@@ -164,11 +197,11 @@
 {
     <div class="card">
         <div class="card-body">
-            <form method="post" action="@Url.Action("DeleteOrder")" style="display:inline;" onsubmit="return confirm('Xóa đơn hàng này? Hành động không thể hoàn tác!');">
+            <form method="post" action="@Url.Action("SoftDeleteOrder")" style="display:inline;" onsubmit="return confirm('Ẩn đơn này khỏi lịch sử?');">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="btn btn-danger btn-sm">
-                    <i class="bi bi-trash"></i> Xóa Đơn
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-eye-slash"></i> Ẩn Đơn
                 </button>
             </form>
         </div>

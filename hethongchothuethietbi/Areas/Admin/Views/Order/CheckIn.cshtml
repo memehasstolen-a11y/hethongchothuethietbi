@@ -67,13 +67,13 @@
                 <h6><i class="bi bi-exclamation-triangle"></i> Cảnh báo: Khách hàng trả trễ!</h6>
                 <dl class="row">
                     <dt class="col-sm-6">Tổng tiền thuê:</dt>
-                    <dd class="col-sm-6">@Model.TotalAmount.ToString("C")</dd>
+                    <dd class="col-sm-6">@Model.TotalAmount.ToString("N0") VNĐ</dd>
 
                     <dt class="col-sm-6">Phí trả trễ:</dt>
-                    <dd class="col-sm-6"><strong>@lateFee.ToString("C")</strong></dd>
+                    <dd class="col-sm-6"><strong>@lateFee.ToString("N0") VNĐ</strong></dd>
 
                     <dt class="col-sm-6">Tổng cộng:</dt>
-                    <dd class="col-sm-6"><strong class="text-danger">@totalWithFee.ToString("C")</strong></dd>
+                    <dd class="col-sm-6"><strong class="text-danger">@totalWithFee.ToString("N0") VNĐ</strong></dd>
                 </dl>
             </div>
         }
@@ -81,7 +81,7 @@
         {
             <div class="alert alert-success" role="alert">
                 <h6><i class="bi bi-check-circle"></i> Trả đúng hạn</h6>
-                <p class="mb-0">Tổng tiền: <strong>@Model.TotalAmount.ToString("C")</strong></p>
+                <p class="mb-0">Tổng tiền: <strong>@Model.TotalAmount.ToString("N0") VNĐ</strong></p>
             </div>
         }
 

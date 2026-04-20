@@ -22,6 +22,38 @@ namespace hethongchothuethietbi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("hethongchothuethietbi.Models.OrderMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("OrderMessages", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -563,6 +595,25 @@ namespace hethongchothuethietbi.Migrations
             modelBuilder.Entity("hethongchothuethietbi.Models.AppUser", b =>
                 {
                     b.Navigation("RentalOrders");
+                });
+
+            modelBuilder.Entity("hethongchothuethietbi.Models.OrderMessage", b =>
+                {
+                    b.HasOne("hethongchothuethietbi.Models.RentalOrder", "Order")
+                        .WithMany("Messages")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("hethongchothuethietbi.Models.AppUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("hethongchothuethietbi.Models.Category", b =>

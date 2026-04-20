@@ -155,6 +155,10 @@
 
         @if (Model.OrderStatus == RentalOrderStatus.Rented)
         {
+            <a href="@Url.Action("ExportHandoverInvoice", new { id = Model.Id })" class="btn btn-info" target="_blank">
+                <i class="bi bi-printer"></i> In Hoá Đơn Bàn Giao
+            </a>
+
             <a href="@Url.Action("CheckIn", new { id = Model.Id })" class="btn btn-warning">
                 <i class="bi bi-arrow-return-left"></i> Nhận lại thiết bị
             </a>
@@ -162,6 +166,10 @@
 
         @if (Model.OrderStatus == RentalOrderStatus.Completed)
         {
+            <a href="@Url.Action("ExportInvoice", new { id = Model.Id })" class="btn btn-success" target="_blank">
+                <i class="bi bi-printer"></i> In Hoá Đơn Thanh Toán
+            </a>
+
             <form method="post" action="@Url.Action("DeleteOrder", new { id = Model.Id })" style="display:inline;" onsubmit="return confirm('Xóa đơn hàng này? Hành động không thể hoàn tác!');">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-danger">
@@ -175,3 +183,47 @@
         </a>
     </div>
 </div>
+
+<!-- Messaging Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">💬 Tin Nhắn Với Khách Hàng</h5>
+            </div>
+            <div class="card-body" style="height: 300px; overflow-y: auto; background: #f8f9fa;">
+                @if (Model.Messages.Any())
+                {
+                    @foreach (var msg in Model.Messages.OrderBy(m => m.CreatedDate))
+                    {
+                        <div class="mb-3 p-2 @(msg.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "text-end" : "")">
+                            <div class="@(msg.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "bg-primary text-white" : "bg-light") p-2 rounded d-inline-block" style="max-width: 70%;">
+                                <p class="mb-1">@msg.Content</p>
+                                <small class="@(msg.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "text-white-50" : "text-muted")">
+                                    @msg.Sender?.FullName - @msg.CreatedDate.ToString("HH:mm dd/MM/yyyy")
+                                </small>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted text-center mt-3">Chưa có tin nhắn nào</p>
+                }
+            </div>
+
+            <div class="card-footer">
+                <form method="post" action="@Url.Action("SendMessage", new { id = Model.Id })">
+                    @Html.AntiForgeryToken()
+                    <div class="input-group">
+                        <input type="text" name="messageContent" class="form-control" placeholder="Nhập tin nhắn..." required maxlength="1000">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Gửi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
